@@ -1,11 +1,14 @@
 package com.pubgconnect.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -16,15 +19,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pubgconnect.models.FriendDto
 import com.pubgconnect.models.UserStatus
-import com.pubgconnect.ui.components.GlassCard
 import com.pubgconnect.ui.components.PlatformBadge
 import com.pubgconnect.ui.components.PrimaryButton
 import com.pubgconnect.ui.components.PubgDivider
@@ -99,13 +103,13 @@ fun FriendsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = CardBg,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, if (playingCount > 0) AccentGreen else BorderDark),
+                    border = BorderStroke(1.dp, if (playingCount > 0) AccentGreen else BorderDark),
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = "🟢", fontSize = 12.sp)
@@ -120,13 +124,13 @@ fun FriendsScreen(
                 }
 
                 Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = CardBg,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderDark),
+                    border = BorderStroke(1.dp, BorderDark),
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = "👥", fontSize = 12.sp)
@@ -191,7 +195,7 @@ fun FriendsScreen(
                         )
                     }
                     item {
-                        Spacer(modifier = Modifier.height(60.dp))
+                        Spacer(modifier = Modifier.height(70.dp))
                     }
                 }
             }
@@ -246,101 +250,147 @@ fun FriendCard(
 ) {
     val isPlaying = friend.status == UserStatus.PLAYING_PUBG
 
-    GlassCard(
-        borderColor = if (isPlaying) AccentGreen else BorderDark,
-        backgroundColor = if (isPlaying) Color(0xFF132320) else CardBg
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isPlaying) Color(0xFF0D1F1A) else CardBg
+        ),
+        border = BorderStroke(
+            width = if (isPlaying) 1.5.dp else 1.dp,
+            color = if (isPlaying) AccentGreen else BorderDark
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
         ) {
-            // User Avatar Box
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(if (isPlaying) AccentGreen.copy(alpha = 0.2f) else CardHover),
-                contentAlignment = Alignment.Center
+            // Header Row: Avatar + Name + ID + Mute & Delete Actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = friend.username.take(1).uppercase(),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = if (isPlaying) AccentGreen else TextPrimary
-                )
-            }
+                // User Avatar Circle
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(if (isPlaying) AccentGreen.copy(alpha = 0.25f) else CardHover)
+                        .border(
+                            1.5.dp,
+                            if (isPlaying) AccentGreen else if (friend.status == UserStatus.ONLINE) AccentBlue else BorderDark,
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = friend.username.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = if (isPlaying) AccentGreen else TextPrimary
+                    )
+                }
 
-            Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
-            // User Info
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Name & ID Column
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = friend.username,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = TextPrimary
+                        color = TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "(${friend.friendId})",
-                        fontSize = 11.sp,
+                        text = "ID: ${friend.friendId}",
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = TextMuted
                     )
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                // Actions: Mute / Delete
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    IconButton(
+                        onClick = onToggleMute,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (friend.isNotificationMuted) Icons.Default.NotificationsOff else Icons.Default.Notifications,
+                            contentDescription = "Toggle Mute",
+                            tint = if (friend.isNotificationMuted) TextMuted else AccentGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onRemove,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Remove Friend",
+                            tint = AccentRed.copy(alpha = 0.85f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            PubgDivider(modifier = Modifier.alpha(0.35f))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Footer Row: Status (Dot + Text + Duration) & Platform Badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
                     StatusDot(status = friend.status)
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    val statusText = when (friend.status) {
-                        UserStatus.PLAYING_PUBG -> "Playing PUBG Mobile"
-                        UserStatus.ONLINE -> "Online"
-                        UserStatus.OFFLINE -> "Offline"
+                    val (statusLabel, statusColor) = when (friend.status) {
+                        UserStatus.PLAYING_PUBG -> Pair("Playing PUBG Mobile", AccentGreen)
+                        UserStatus.ONLINE -> Pair("Online", AccentBlue)
+                        UserStatus.OFFLINE -> Pair("Offline", TextSecondary)
                     }
 
                     Text(
-                        text = statusText,
+                        text = statusLabel,
                         fontSize = 12.sp,
-                        fontWeight = if (isPlaying) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isPlaying) AccentGreen else TextSecondary
+                        fontWeight = if (isPlaying) FontWeight.Bold else FontWeight.Medium,
+                        color = statusColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     if (isPlaying && friend.showPlayingDuration) {
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = " • ${friend.playingDurationMinutes}m",
+                            text = "(${friend.playingDurationMinutes}m)",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AccentGreen
+                            color = AccentGreen,
+                            maxLines = 1
                         )
                     }
                 }
 
                 if (isPlaying) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     PlatformBadge(platform = friend.platform)
-                }
-            }
-
-            // Quick Actions (Mute & Delete)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onToggleMute) {
-                    Icon(
-                        imageVector = if (friend.isNotificationMuted) Icons.Default.NotificationsOff else Icons.Default.Notifications,
-                        contentDescription = "Toggle Mute",
-                        tint = if (friend.isNotificationMuted) TextMuted else AccentGreen
-                    )
-                }
-
-                IconButton(onClick = onRemove) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Remove Friend",
-                        tint = AccentRed
-                    )
                 }
             }
         }
