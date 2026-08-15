@@ -7,9 +7,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    // 10.0.2.2 maps to host localhost from standard Android Studio emulator
-    // Can be dynamically customized from app Settings
-    private var currentBaseUrl = "http://10.0.2.2:5000/"
+    // Default points to live Oracle Cloud server
+    // Can be dynamically customized from app Settings / Login
+    private var currentBaseUrl = "http://84.235.248.234:5000/"
     private var apiServiceInstance: ApiService? = null
 
     val baseUrl: String

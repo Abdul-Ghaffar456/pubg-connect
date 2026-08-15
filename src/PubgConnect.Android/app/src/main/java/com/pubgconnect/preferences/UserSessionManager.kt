@@ -18,7 +18,7 @@ class UserSessionManager(context: Context) {
         private const val KEY_SOUND_ENABLED = "sound_enabled"
         private const val KEY_VIBRATE_ENABLED = "vibrate_enabled"
         private const val KEY_SIMULATION_ENABLED = "simulation_enabled"
-        private const val DEFAULT_SERVER_URL = "http://10.0.2.2:5000"
+        private const val DEFAULT_SERVER_URL = "http://84.235.248.234:5000"
     }
 
     var token: String?
