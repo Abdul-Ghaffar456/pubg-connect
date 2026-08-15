@@ -96,6 +96,36 @@ namespace PubgConnect.Client.Services
             catch { }
         }
 
+        public static string LoadSavedToken()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(AppSettingsRegistryKeyPath, false);
+                return key?.GetValue("AuthToken")?.ToString() ?? string.Empty;
+            }
+            catch { return string.Empty; }
+        }
+
+        public static void SaveAuthToken(string token)
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.CreateSubKey(AppSettingsRegistryKeyPath);
+                key?.SetValue("AuthToken", token ?? string.Empty);
+            }
+            catch { }
+        }
+
+        public static void ClearSavedToken()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.CreateSubKey(AppSettingsRegistryKeyPath);
+                key?.DeleteValue("AuthToken", false);
+            }
+            catch { }
+        }
+
         public async Task<AuthResponse> LoginAsync(string email, string password)
         {
             try
@@ -105,6 +135,7 @@ namespace PubgConnect.Client.Services
                 if (result != null && result.Success)
                 {
                     Token = result.Token;
+                    SaveAuthToken(result.Token);
                 }
                 return result ?? new AuthResponse { Success = false, Message = "Invalid server response." };
             }
@@ -123,6 +154,7 @@ namespace PubgConnect.Client.Services
                 if (result != null && result.Success)
                 {
                     Token = result.Token;
+                    SaveAuthToken(result.Token);
                 }
                 return result ?? new AuthResponse { Success = false, Message = "Invalid server response." };
             }

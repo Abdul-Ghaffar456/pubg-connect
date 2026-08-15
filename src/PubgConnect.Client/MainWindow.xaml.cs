@@ -44,6 +44,22 @@ namespace PubgConnect.Client
                 onSettingsRequested: () => mainVm.NavigateTab("Settings"),
                 onExitRequested: () => ExitApplication()
             );
+
+            Loaded += (s, e) =>
+            {
+                var args = Environment.GetCommandLineArgs();
+                foreach (var arg in args)
+                {
+                    if (arg.Equals("--autostart", StringComparison.OrdinalIgnoreCase) ||
+                        arg.Equals("--silent", StringComparison.OrdinalIgnoreCase) ||
+                        arg.Equals("--tray", StringComparison.OrdinalIgnoreCase) ||
+                        arg.Equals("--minimized", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _systemTrayService.HideToTray();
+                        break;
+                    }
+                }
+            };
         }
 
         private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
@@ -87,6 +103,9 @@ namespace PubgConnect.Client
             Show();
             WindowState = WindowState.Normal;
             Activate();
+            Topmost = true;
+            Topmost = false;
+            Focus();
         }
 
         private void ExitApplication()

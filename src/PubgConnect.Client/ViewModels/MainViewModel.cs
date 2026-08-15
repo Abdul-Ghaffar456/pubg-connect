@@ -69,7 +69,7 @@ namespace PubgConnect.Client.ViewModels
 
             ShowLogin();
 
-            // Run Background Auto-Discovery of Server URL
+            // Run Background Auto-Discovery and Auto-Login
             _ = Task.Run(async () =>
             {
                 try
@@ -89,6 +89,29 @@ namespace PubgConnect.Client.ViewModels
                     }
                 }
                 catch { }
+
+                // Auto-login with saved token
+                try
+                {
+                    var savedToken = ApiClient.LoadSavedToken();
+                    if (!string.IsNullOrWhiteSpace(savedToken))
+                    {
+                        _apiClient.Token = savedToken;
+                        var profile = await _apiClient.GetMeAsync();
+                        if (profile != null)
+                        {
+                            await App.Current.Dispatcher.InvokeAsync(async () =>
+                            {
+                                await OnLoginSuccessAsync();
+                            });
+                            return;
+                        }
+                    }
+                }
+                catch { }
+
+                // Start game monitoring even before login so GameLoop launches trigger the app
+                _gameDetector.StartMonitoring();
             });
 
             // Wire realtime event handlers
@@ -164,6 +187,7 @@ namespace PubgConnect.Client.ViewModels
             _gameDetector.StopMonitoring();
             await _realtimeClient.StopAsync();
 
+            ApiClient.ClearSavedToken();
             _apiClient.Token = string.Empty;
             CurrentUser = null;
             IsLoggedIn = false;

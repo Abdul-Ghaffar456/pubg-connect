@@ -18,6 +18,18 @@ namespace PubgConnect.Client.Services
         private const string RunRegistryKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
         private const string AppSettingsRegistryKeyPath = @"SOFTWARE\PUBGConnect";
 
+        public StartupService()
+        {
+            try
+            {
+                if (IsStartWithGameLoopEnabled() && !IsStartWithWindowsEnabled())
+                {
+                    SetStartWithWindows(true);
+                }
+            }
+            catch { }
+        }
+
         public bool IsStartWithWindowsEnabled()
         {
             try

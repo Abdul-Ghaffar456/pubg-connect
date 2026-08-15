@@ -39,7 +39,13 @@ namespace PubgConnect.Client.Services
             "txgameassistant",
             "appmarket",
             "tencentplayer",
-            "synergyv"
+            "synergyv",
+            "androidemulator",
+            "androidemulatorlauncher",
+            "androidemulatoren",
+            "gameloop",
+            "uiwebflow",
+            "tqm"
         };
 
         private static readonly string[] PubgProcesses = new[]
@@ -48,7 +54,9 @@ namespace PubgConnect.Client.Services
             "androidprocess",
             "aow_proc",
             "pubgmobile",
-            "com.tencent.ig"
+            "com.tencent.ig",
+            "com.pubg.krmobile",
+            "com.pubg.imobile"
         };
 
         public bool IsGameLoopRunning => _isSimulatedMode ? true : _isGameLoopRunning;
