@@ -7,9 +7,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    // Default points to live Oracle Cloud server
+    // Default points to live Render.com Cloud server
     // Can be dynamically customized from app Settings / Login
-    private var currentBaseUrl = "http://145.241.123.224:5000/"
+    private var currentBaseUrl = "https://pubgconnect-backend.onrender.com/"
     private var apiServiceInstance: ApiService? = null
 
     val baseUrl: String

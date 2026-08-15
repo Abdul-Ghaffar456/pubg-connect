@@ -1,5 +1,5 @@
 {
-  "ServerUrl": "http://145.241.123.224:5000",
+  "ServerUrl": "https://pubgconnect-backend.onrender.com",
   "DynamicDiscoveryUrl": "",
   "EnableLanAutoDiscovery": true
 }

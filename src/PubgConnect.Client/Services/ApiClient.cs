@@ -83,7 +83,7 @@ namespace PubgConnect.Client.Services
                 }
             }
             catch { }
-            return "http://145.241.123.224:5000";
+            return "https://pubgconnect-backend.onrender.com";
         }
 
         private static void SaveServerUrl(string url)
