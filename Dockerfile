@@ -13,6 +13,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV ASPNETCORE_URLS=http://0.0.0.0:10000;http://0.0.0.0:8080;http://0.0.0.0:5000
 EXPOSE 10000 8080 5000
 

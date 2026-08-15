@@ -7,6 +7,8 @@ using PubgConnect.Server.Hubs;
 using PubgConnect.Server.Services;
 using PubgConnect.Shared;
 
+Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "true");
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
