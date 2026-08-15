@@ -31,7 +31,7 @@ namespace PubgConnect.Client.Services
     public class ApiClient : IApiClient
     {
         private readonly HttpClient _http;
-        private string _baseUrl = "http://localhost:5000";
+        private string _baseUrl = "http://84.235.248.234:5000";
         private string _token = string.Empty;
         private const string AppSettingsRegistryKeyPath = @"SOFTWARE\PUBGConnect";
 
@@ -83,7 +83,7 @@ namespace PubgConnect.Client.Services
                 }
             }
             catch { }
-            return "http://localhost:5000";
+            return "http://84.235.248.234:5000";
         }
 
         private static void SaveServerUrl(string url)

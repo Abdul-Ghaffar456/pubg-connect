@@ -1,5 +1,5 @@
 {
-  "ServerUrl": "",
+  "ServerUrl": "http://84.235.248.234:5000",
   "DynamicDiscoveryUrl": "",
   "EnableLanAutoDiscovery": true
 }
