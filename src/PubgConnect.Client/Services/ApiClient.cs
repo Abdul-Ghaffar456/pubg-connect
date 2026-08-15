@@ -83,7 +83,7 @@ namespace PubgConnect.Client.Services
                 }
             }
             catch { }
-            return "http://84.235.248.234:5000";
+            return "http://145.241.123.224:5000";
         }
 
         private static void SaveServerUrl(string url)

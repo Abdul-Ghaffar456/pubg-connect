@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 object ApiClient {
     // Default points to live Oracle Cloud server
     // Can be dynamically customized from app Settings / Login
-    private var currentBaseUrl = "http://84.235.248.234:5000/"
+    private var currentBaseUrl = "http://145.241.123.224:5000/"
     private var apiServiceInstance: ApiService? = null
 
     val baseUrl: String

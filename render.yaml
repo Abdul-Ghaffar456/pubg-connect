@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: pubgconnect-backend
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production

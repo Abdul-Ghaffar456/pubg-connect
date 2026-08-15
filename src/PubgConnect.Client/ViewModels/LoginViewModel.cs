@@ -19,7 +19,7 @@ namespace PubgConnect.Client.ViewModels
         private string _password = "password123";
 
         [ObservableProperty]
-        private string _serverUrl = "http://84.235.248.234:5000";
+        private string _serverUrl = "http://145.241.123.224:5000";
 
         [ObservableProperty]
         private bool _showServerSettings;

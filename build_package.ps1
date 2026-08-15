@@ -1,3 +1,6 @@
+Get-Process -Name "PubgConnect.Client" -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Milliseconds 500
+
 $distDir = "dist\PUBGConnect_v1.0_Windows_x64"
 if (Test-Path $distDir) {
     Remove-Item -Path $distDir -Recurse -Force
