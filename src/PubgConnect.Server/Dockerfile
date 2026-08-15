@@ -1,20 +1,14 @@
-# Stage 1: Build
+# Build Stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
+WORKDIR /app
 
-# Copy csproj files and restore
-COPY src/PubgConnect.Shared/PubgConnect.Shared.csproj src/PubgConnect.Shared/
-COPY src/PubgConnect.Server/PubgConnect.Server.csproj src/PubgConnect.Server/
-RUN dotnet restore src/PubgConnect.Server/PubgConnect.Server.csproj
+# Copy all source files
+COPY src/ src/
 
-# Copy source code and build
-COPY src/PubgConnect.Shared/ src/PubgConnect.Shared/
-COPY src/PubgConnect.Server/ src/PubgConnect.Server/
+# Build and publish
+RUN dotnet publish src/PubgConnect.Server/PubgConnect.Server.csproj -c Release -o /app/publish
 
-WORKDIR /src/PubgConnect.Server
-RUN dotnet publish PubgConnect.Server.csproj -c Release -o /app/publish
-
-# Stage 2: Runtime
+# Runtime Stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
