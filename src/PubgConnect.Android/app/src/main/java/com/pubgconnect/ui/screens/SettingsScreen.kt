@@ -1,19 +1,26 @@
 package com.pubgconnect.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pubgconnect.api.ApiClient
+import com.pubgconnect.detection.PubgDetector
 import com.pubgconnect.ui.components.GlassCard
 import com.pubgconnect.ui.components.ModernTextField
 import com.pubgconnect.ui.components.PrimaryButton
@@ -26,6 +33,9 @@ import com.pubgconnect.ui.viewmodels.MainViewModel
 fun SettingsScreen(viewModel: MainViewModel) {
     val context = LocalContext.current
     val currentUser by viewModel.currentUser.collectAsState()
+    val hasUsageAccess by viewModel.hasUsageAccess.collectAsState()
+    val isPubgInstalled by viewModel.isPubgInstalled.collectAsState()
+    val isSimulatedActive by viewModel.isSimulatedPubgActive.collectAsState()
 
     var shareStatus by remember(currentUser) { mutableStateOf(currentUser?.shareStatus ?: true) }
     var allowFriendRequests by remember(currentUser) { mutableStateOf(currentUser?.allowFriendRequests ?: true) }
@@ -35,7 +45,12 @@ fun SettingsScreen(viewModel: MainViewModel) {
     var soundEnabled by remember { mutableStateOf(viewModel.sessionManager.isSoundEnabled) }
     var vibrateEnabled by remember { mutableStateOf(viewModel.sessionManager.isVibrateEnabled) }
 
+    var isSimModeEnabled by remember { mutableStateOf(viewModel.sessionManager.isSimulationMode) }
     var serverUrl by remember { mutableStateOf(viewModel.sessionManager.serverUrl) }
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshUsageAccessStatus()
+    }
 
     Column(
         modifier = Modifier
@@ -51,7 +66,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             color = TextPrimary
         )
         Text(
-            text = "Manage privacy, notifications, and connection",
+            text = "Manage detection, notifications, and cloud sync",
             fontSize = 13.sp,
             color = TextSecondary,
             modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
@@ -59,50 +74,188 @@ fun SettingsScreen(viewModel: MainViewModel) {
 
         PubgDivider(modifier = Modifier.padding(bottom = 16.dp))
 
-        // Profile Overview Card
-        GlassCard {
-            Text(
-                text = currentUser?.username ?: "Player",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
-            Text(
-                text = currentUser?.email ?: "",
-                fontSize = 13.sp,
-                color = TextSecondary
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Friend ID: ",
-                    fontSize = 13.sp,
-                    color = TextSecondary
-                )
-                Text(
-                    text = currentUser?.friendId ?: "------",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentGreen
-                )
+        // 1. Account Profile Card
+        GlassCard(
+            onClick = {
+                currentUser?.let { user ->
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Friend ID", user.friendId)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(context, "Friend ID copied: ${user.friendId}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = currentUser?.username ?: "Player",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = currentUser?.email ?: "",
+                        fontSize = 13.sp,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Friend ID: ${currentUser?.friendId ?: "------"} (Tap to copy)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AccentGreen
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = CardHover,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderDark)
+                ) {
+                    Text(
+                        text = "📋 Copy",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Privacy Controls Card (Section 15)
+        // 2. PUBG Mobile Auto-Detection & Permissions Card
+        GlassCard(
+            borderColor = if (hasUsageAccess) AccentGreen else AccentYellow
+        ) {
+            Text(
+                text = "🎮 Game Detection & Permissions",
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = TextPrimary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Usage Access
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                    Text(
+                        text = "Android Usage Access",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (hasUsageAccess) "✅ Enabled - Auto-detects PUBG launch" else "⚠️ Required to auto-detect game launch",
+                        fontSize = 11.sp,
+                        color = if (hasUsageAccess) AccentGreen else AccentYellow
+                    )
+                }
+
+                if (!hasUsageAccess) {
+                    SecondaryButton(
+                        text = "Enable",
+                        onClick = { PubgDetector.openUsageStatsSettings(context) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            PubgDivider()
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Game Package Status
+            Text(
+                text = if (isPubgInstalled) "✅ PUBG Mobile Installed on Device" else "ℹ️ PUBG Mobile Not Installed (Test Mode available below)",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isPubgInstalled) AccentGreen else TextSecondary
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+            PubgDivider()
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Interactive Simulation Mode Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                    Text(
+                        text = "Interactive Test Mode",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "Simulate PUBG playing status without running the game",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                }
+
+                Switch(
+                    checked = isSimModeEnabled,
+                    onCheckedChange = {
+                        isSimModeEnabled = it
+                        viewModel.sessionManager.isSimulationMode = it
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AccentGreen,
+                        checkedTrackColor = CardHover
+                    )
+                )
+            }
+
+            if (isSimModeEnabled) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (isSimulatedActive) "🟢 In Game" else "⚫ Offline",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSimulatedActive) AccentGreen else TextSecondary
+                    )
+
+                    PrimaryButton(
+                        text = if (isSimulatedActive) "Simulate Close" else "Simulate Play",
+                        onClick = { viewModel.toggleSimulatedPubg() },
+                        modifier = Modifier.width(150.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 3. Privacy Controls Card
         GlassCard {
             Text(
-                text = "🔒 Privacy & Status Controls",
+                text = "🔒 Privacy & Visibility",
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 color = TextPrimary,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
             SettingSwitchRow(
                 title = "Share PUBG Status",
-                subtitle = "Broadcast when you are playing PUBG Mobile to friends",
+                subtitle = "Broadcast when you are playing PUBG to friends",
                 checked = shareStatus,
                 onCheckedChange = {
                     shareStatus = it
@@ -126,7 +279,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
 
             SettingSwitchRow(
                 title = "Show Playing Duration",
-                subtitle = "Display elapsed playing time to friends (e.g. 14 min)",
+                subtitle = "Display elapsed playing time to friends",
                 checked = showPlayingDuration,
                 onCheckedChange = {
                     showPlayingDuration = it
@@ -135,21 +288,21 @@ fun SettingsScreen(viewModel: MainViewModel) {
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Notification Controls Card (Section 16)
+        // 4. Notification Controls Card
         GlassCard {
             Text(
-                text = "🔔 Desktop & Push Notifications",
+                text = "🔔 Notifications & Alerts",
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 color = TextPrimary,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
             SettingSwitchRow(
                 title = "Push Notifications",
-                subtitle = "Receive alerts when friends launch PUBG on PC or Android",
+                subtitle = "Alert when friends start PUBG on GameLoop or Mobile",
                 checked = notificationsEnabled,
                 onCheckedChange = {
                     notificationsEnabled = it
@@ -161,7 +314,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
 
             SettingSwitchRow(
                 title = "Notification Sound",
-                subtitle = "Play notification sound when friend goes online",
+                subtitle = "Play sound when alert arrives",
                 checked = soundEnabled,
                 onCheckedChange = {
                     soundEnabled = it
@@ -173,7 +326,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
 
             SettingSwitchRow(
                 title = "Vibrate on Alert",
-                subtitle = "Vibrate device when friend starts PUBG",
+                subtitle = "Vibrate phone when friend goes online",
                 checked = vibrateEnabled,
                 onCheckedChange = {
                     vibrateEnabled = it
@@ -182,29 +335,29 @@ fun SettingsScreen(viewModel: MainViewModel) {
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Server Connection Card
+        // 5. Cloud Server Connection Card
         GlassCard {
             Text(
-                text = "🌐 Backend Server Connection",
+                text = "🌐 Cloud Server Connection",
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 color = TextPrimary,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 10.dp)
             )
 
             ModernTextField(
                 value = serverUrl,
                 onValueChange = { serverUrl = it },
                 label = "Server URL",
-                placeholder = "http://10.0.2.2:5000"
+                placeholder = "https://pubgconnect-backend.onrender.com"
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             SecondaryButton(
-                text = "Update Server URL",
+                text = "Save & Reconnect",
                 onClick = {
                     viewModel.sessionManager.serverUrl = serverUrl
                     ApiClient.updateBaseUrl(serverUrl)
@@ -214,19 +367,19 @@ fun SettingsScreen(viewModel: MainViewModel) {
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-        // Logout Button
+        // 6. Logout Button
         Button(
             onClick = { viewModel.logout() },
             modifier = Modifier.fillMaxWidth().height(48.dp),
             colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(10.dp)
         ) {
-            Text(text = "🚪  Log Out", fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White)
+            Text(text = "🚪  Log Out", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(40.dp))
     }
 }
 

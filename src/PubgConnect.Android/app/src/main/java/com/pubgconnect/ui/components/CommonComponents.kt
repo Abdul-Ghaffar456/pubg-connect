@@ -2,9 +2,12 @@ package com.pubgconnect.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pubgconnect.models.PlatformType
@@ -23,13 +27,17 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color = CardBg,
     borderColor: Color = BorderDark,
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        border = BorderStroke(1.dp, borderColor)
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -63,7 +71,7 @@ fun PlatformBadge(
     modifier: Modifier = Modifier
 ) {
     val (text, icon) = when (platform) {
-        PlatformType.GAMELOOP -> Pair("GameLoop", "🖥️")
+        PlatformType.GAMELOOP -> Pair("GameLoop PC", "🖥️")
         PlatformType.ANDROID -> Pair("Android", "📱")
         PlatformType.NONE -> return
     }
@@ -75,7 +83,7 @@ fun PlatformBadge(
         border = BorderStroke(1.dp, BorderDark)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = icon, fontSize = 11.sp)
@@ -84,7 +92,7 @@ fun PlatformBadge(
                 text = text,
                 color = TextSecondary,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -96,17 +104,18 @@ fun PrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    containerColor: Color = AccentGreen
 ) {
     Button(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp),
+            .height(50.dp),
         enabled = enabled && !isLoading,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = AccentGreen,
+            containerColor = containerColor,
             contentColor = Color.White,
             disabledContainerColor = CardHover,
             disabledContentColor = TextMuted
@@ -114,12 +123,16 @@ fun PrimaryButton(
     ) {
         if (isLoading) {
             CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(22.dp),
                 color = Color.White,
-                strokeWidth = 2.dp
+                strokeWidth = 2.5.dp
             )
         } else {
-            Text(text = text, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+            Text(
+                text = text,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
+            )
         }
     }
 }
@@ -129,19 +142,24 @@ fun SecondaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    textColor: Color = TextPrimary
+    textColor: Color = TextPrimary,
+    borderColor: Color = BorderDark
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.height(40.dp),
-        shape = RoundedCornerShape(8.dp),
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = CardBg,
             contentColor = textColor
         ),
-        border = BorderStroke(1.dp, BorderDark)
+        border = BorderStroke(1.dp, borderColor)
     ) {
-        Text(text = text, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+        Text(
+            text = text,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp
+        )
     }
 }
 
@@ -153,19 +171,25 @@ fun ModernTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     singleLine: Boolean = true,
-    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
-    keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, color = TextSecondary) },
-        placeholder = { Text(placeholder, color = TextMuted) },
+        label = { Text(label, color = TextSecondary, fontSize = 13.sp) },
+        placeholder = { Text(placeholder, color = TextMuted, fontSize = 13.sp) },
         modifier = modifier.fillMaxWidth(),
         singleLine = singleLine,
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
-        shape = RoundedCornerShape(8.dp),
+        keyboardActions = keyboardActions,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        shape = RoundedCornerShape(10.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = AccentGreen,
             unfocusedBorderColor = BorderDark,
@@ -187,4 +211,3 @@ fun PubgDivider(modifier: Modifier = Modifier) {
             .background(BorderDark)
     )
 }
-
