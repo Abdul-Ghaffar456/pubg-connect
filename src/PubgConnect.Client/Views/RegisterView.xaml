@@ -1,0 +1,47 @@
+<UserControl x:Class="PubgConnect.Client.Views.RegisterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" 
+             d:DesignHeight="580" d:DesignWidth="420">
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+        <Border Style="{StaticResource GlassCardStyle}" Width="380" Padding="32,28">
+            <StackPanel>
+                <!-- App Logo & Header -->
+                <StackPanel HorizontalAlignment="Center" Margin="0,0,0,24">
+                    <TextBlock Text="🎮" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                    <TextBlock Text="Create Account" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Get a unique Friend ID to connect with friends" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Username Input -->
+                <TextBlock Text="Username" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="Medium" Margin="0,0,0,6"/>
+                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,0,16"/>
+
+                <!-- Email Input -->
+                <TextBlock Text="Email Address" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="Medium" Margin="0,0,0,6"/>
+                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,0,16"/>
+
+                <!-- Password Input -->
+                <TextBlock Text="Password" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="Medium" Margin="0,0,0,6"/>
+                <PasswordBox x:Name="PasswordBox" Style="{StaticResource ModernPasswordBoxStyle}" Margin="0,0,0,20" PasswordChanged="PasswordBox_PasswordChanged"/>
+
+                <!-- Error Message -->
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource AccentRedBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"
+                           Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisConverter}}"/>
+
+                <!-- Register Button -->
+                <Button Content="Register Account" Command="{Binding RegisterCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="44" Margin="0,0,0,16"/>
+
+                <!-- Divider & Login Link -->
+                <Separator Background="{StaticResource BorderBrushDark}" Margin="0,8,0,16"/>
+
+                <Button Content="Already have an account? Log In" Command="{Binding GoToLoginCommand}" 
+                        Background="Transparent" BorderThickness="0" Foreground="{StaticResource AccentBlueBrush}" 
+                        FontSize="13" Cursor="Hand" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

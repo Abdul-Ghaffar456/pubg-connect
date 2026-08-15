@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PubgConnect.Client/PubgConnect.Client.csproj" />
+    <Project Path="src/PubgConnect.Server/PubgConnect.Server.csproj" />
+    <Project Path="src/PubgConnect.Shared/PubgConnect.Shared.csproj" />
+  </Folder>
+</Solution>
