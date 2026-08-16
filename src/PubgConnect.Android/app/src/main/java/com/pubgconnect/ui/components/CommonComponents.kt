@@ -123,9 +123,9 @@ fun PrimaryButton(
     ) {
         if (isLoading) {
             CircularProgressIndicator(
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(32.dp),
                 color = Color.White,
-                strokeWidth = 2.5.dp
+                strokeWidth = 3.5.dp
             )
         } else {
             Text(
@@ -135,6 +135,19 @@ fun PrimaryButton(
             )
         }
     }
+}
+
+@Composable
+fun BigLoadingIndicator(
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 48.dp,
+    color: Color = AccentGreen
+) {
+    CircularProgressIndicator(
+        modifier = modifier.size(size),
+        color = color,
+        strokeWidth = 4.dp
+    )
 }
 
 @Composable

@@ -335,41 +335,9 @@ fun SettingsScreen(viewModel: MainViewModel) {
             )
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // 5. Cloud Server Connection Card
-        GlassCard {
-            Text(
-                text = "🌐 Cloud Server Connection",
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = TextPrimary,
-                modifier = Modifier.padding(bottom = 10.dp)
-            )
-
-            ModernTextField(
-                value = serverUrl,
-                onValueChange = { serverUrl = it },
-                label = "Server URL",
-                placeholder = "https://pubgconnect-backend.onrender.com"
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            SecondaryButton(
-                text = "Save & Reconnect",
-                onClick = {
-                    viewModel.sessionManager.serverUrl = serverUrl
-                    ApiClient.updateBaseUrl(serverUrl)
-                    viewModel.startRealtimeAndSync()
-                    Toast.makeText(context, "Server URL updated & synced!", Toast.LENGTH_SHORT).show()
-                }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // 6. Logout Button
+        // 5. Logout Button
         Button(
             onClick = { viewModel.logout() },
             modifier = Modifier.fillMaxWidth().height(48.dp),

@@ -11,9 +11,9 @@
             <StackPanel>
                 <!-- App Logo & Header -->
                 <StackPanel HorizontalAlignment="Center" Margin="0,0,0,24">
-                    <TextBlock Text="🎮" FontSize="42" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                    <TextBlock Text="PUBG Connect" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="GameLoop Friend Status Notifier" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="🎮" FontSize="52" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                    <TextBlock Text="PUBG Connect" FontSize="26" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="GameLoop Friend Status Notifier" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <!-- Email Input -->
@@ -24,27 +24,12 @@
                 <TextBlock Text="Password" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="Medium" Margin="0,0,0,6"/>
                 <PasswordBox x:Name="PasswordBox" Style="{StaticResource ModernPasswordBoxStyle}" Margin="0,0,0,16" PasswordChanged="PasswordBox_PasswordChanged"/>
 
-                <!-- Server Settings Toggle -->
-                <Button Content="⚙️ Server Connection (Internet / LAN)" Command="{Binding ToggleServerSettingsCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextSecondaryBrush}" 
-                        FontSize="11" Cursor="Hand" HorizontalAlignment="Right" Margin="0,0,0,12"/>
-
-                <!-- Expandable Server URL Input -->
-                <Border Background="#0F172A" BorderBrush="{StaticResource BorderBrushDark}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,16"
-                        Visibility="{Binding ShowServerSettings, Converter={StaticResource BoolToVisConverter}}">
-                    <StackPanel>
-                        <TextBlock Text="Server Host / IP Address:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,0,0,4"/>
-                        <TextBox Text="{Binding ServerUrl, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBoxStyle}" FontSize="12" Height="36" Padding="8,6"/>
-                        <TextBlock Text="e.g. http://192.168.1.50:5000 or https://your-server.com" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-
                 <!-- Error Message -->
                 <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource AccentRedBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"
                            Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisConverter}}"/>
 
                 <!-- Login Button -->
-                <Button Content="Log In" Command="{Binding LoginCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="44" Margin="0,0,0,16"/>
+                <Button Content="Log In" Command="{Binding LoginCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="46" Margin="0,0,0,16"/>
 
                 <!-- Divider & Register Link -->
                 <Separator Background="{StaticResource BorderBrushDark}" Margin="0,8,0,16"/>

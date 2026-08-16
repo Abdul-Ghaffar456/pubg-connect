@@ -13,10 +13,10 @@ namespace PubgConnect.Client.ViewModels
         private readonly Func<Task> _onLoginSuccess;
 
         [ObservableProperty]
-        private string _email = "ali@pubg.com";
+        private string _email = string.Empty;
 
         [ObservableProperty]
-        private string _password = "password123";
+        private string _password = string.Empty;
 
         [ObservableProperty]
         private string _serverUrl = "https://pubgconnect-backend.onrender.com";

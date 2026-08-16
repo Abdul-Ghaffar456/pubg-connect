@@ -2,9 +2,11 @@ package com.pubgconnect.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -22,11 +25,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pubgconnect.api.ApiClient
 import com.pubgconnect.ui.components.GlassCard
 import com.pubgconnect.ui.components.ModernTextField
 import com.pubgconnect.ui.components.PrimaryButton
-import com.pubgconnect.ui.components.SecondaryButton
 import com.pubgconnect.ui.theme.*
 import com.pubgconnect.ui.viewmodels.MainViewModel
 
@@ -37,10 +38,8 @@ fun LoginScreen(viewModel: MainViewModel) {
     var isLoginTab by remember { mutableStateOf(true) }
 
     var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("ali@pubg.com") }
-    var password by remember { mutableStateOf("password123") }
-    var serverUrl by remember { mutableStateOf(viewModel.sessionManager.serverUrl) }
-    var showServerConfig by remember { mutableStateOf(false) }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
     val isLoading by viewModel.isLoading.collectAsState()
 
@@ -53,34 +52,45 @@ fun LoginScreen(viewModel: MainViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .padding(horizontal = 22.dp, vertical = 24.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // App Branding Header
-            Text(text = "🎮", fontSize = 48.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+            // Big App Brand Hero Icon
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF132822))
+                    .border(2.dp, AccentGreen, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "🎮", fontSize = 48.sp)
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = "PUBG CONNECT",
-                fontSize = 24.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = TextPrimary,
+                letterSpacing = 1.sp
             )
             Text(
                 text = "GameLoop & Android Friend Notifier",
                 fontSize = 13.sp,
                 color = TextSecondary,
-                modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
             )
 
             // Login / Register Switch Tabs
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(CardBg, RoundedCornerShape(10.dp))
+                    .background(CardBg, RoundedCornerShape(12.dp))
                     .padding(4.dp)
             ) {
                 Box(
@@ -88,7 +98,7 @@ fun LoginScreen(viewModel: MainViewModel) {
                         .weight(1f)
                         .background(
                             if (isLoginTab) AccentGreen else Color.Transparent,
-                            RoundedCornerShape(8.dp)
+                            RoundedCornerShape(10.dp)
                         )
                         .clickable { isLoginTab = true }
                         .padding(vertical = 12.dp),
@@ -107,7 +117,7 @@ fun LoginScreen(viewModel: MainViewModel) {
                         .weight(1f)
                         .background(
                             if (!isLoginTab) AccentGreen else Color.Transparent,
-                            RoundedCornerShape(8.dp)
+                            RoundedCornerShape(10.dp)
                         )
                         .clickable { isLoginTab = false }
                         .padding(vertical = 12.dp),
@@ -122,7 +132,7 @@ fun LoginScreen(viewModel: MainViewModel) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Form Fields Card
             GlassCard {
@@ -130,11 +140,11 @@ fun LoginScreen(viewModel: MainViewModel) {
                     ModernTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = "Username",
+                        label = "Display Name",
                         placeholder = "e.g. ShadowHunter",
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                 }
 
                 ModernTextField(
@@ -148,13 +158,13 @@ fun LoginScreen(viewModel: MainViewModel) {
                     )
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 ModernTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = "Password",
-                    placeholder = "Enter password",
+                    placeholder = "Enter your password",
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
@@ -163,10 +173,18 @@ fun LoginScreen(viewModel: MainViewModel) {
                     keyboardActions = KeyboardActions(onDone = {
                         focusManager.clearFocus()
                         if (isLoginTab) {
+                            if (email.isBlank() || password.isBlank()) {
+                                Toast.makeText(context, "Please enter your email and password", Toast.LENGTH_SHORT).show()
+                                return@KeyboardActions
+                            }
                             viewModel.login(email, password) { success, msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                             }
                         } else {
+                            if (username.isBlank() || email.isBlank() || password.isBlank()) {
+                                Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                                return@KeyboardActions
+                            }
                             viewModel.register(username, email, password) { success, msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                             }
@@ -174,17 +192,25 @@ fun LoginScreen(viewModel: MainViewModel) {
                     })
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(22.dp))
 
                 PrimaryButton(
                     text = if (isLoginTab) "Sign In" else "Create Account",
                     onClick = {
                         focusManager.clearFocus()
                         if (isLoginTab) {
+                            if (email.isBlank() || password.isBlank()) {
+                                Toast.makeText(context, "Please enter your email and password", Toast.LENGTH_SHORT).show()
+                                return@PrimaryButton
+                            }
                             viewModel.login(email, password) { success, msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                             }
                         } else {
+                            if (username.isBlank() || email.isBlank() || password.isBlank()) {
+                                Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                                return@PrimaryButton
+                            }
                             viewModel.register(username, email, password) { success, msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                             }
@@ -194,104 +220,7 @@ fun LoginScreen(viewModel: MainViewModel) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Quick Demo Accounts Card
-            GlassCard(backgroundColor = CardBg) {
-                Text(
-                    text = "⚡ Quick Demo Accounts (Tap to fill)",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    color = AccentYellow,
-                    modifier = Modifier.padding(bottom = 10.dp)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SecondaryButton(
-                        text = "Ali (PC)",
-                        onClick = {
-                            email = "ali@pubg.com"
-                            password = "password123"
-                            isLoginTab = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    SecondaryButton(
-                        text = "Ahmed (Mob)",
-                        onClick = {
-                            email = "ahmed@pubg.com"
-                            password = "password123"
-                            isLoginTab = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SecondaryButton(
-                        text = "Hassan",
-                        onClick = {
-                            email = "hassan@pubg.com"
-                            password = "password123"
-                            isLoginTab = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    SecondaryButton(
-                        text = "Usman",
-                        onClick = {
-                            email = "usman@pubg.com"
-                            password = "password123"
-                            isLoginTab = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Server Connection Link
-            Text(
-                text = if (showServerConfig) "▲ Hide Server Configuration" else "🌐 Server: $serverUrl (Tap to change)",
-                color = TextSecondary,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .clickable { showServerConfig = !showServerConfig }
-                    .padding(8.dp)
-            )
-
-            if (showServerConfig) {
-                GlassCard(modifier = Modifier.padding(top = 8.dp)) {
-                    ModernTextField(
-                        value = serverUrl,
-                        onValueChange = { serverUrl = it },
-                        label = "Cloud / Server URL",
-                        placeholder = "https://pubgconnect-backend.onrender.com"
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    PrimaryButton(
-                        text = "Save Server URL",
-                        onClick = {
-                            viewModel.sessionManager.serverUrl = serverUrl
-                            ApiClient.updateBaseUrl(serverUrl)
-                            Toast.makeText(context, "Server URL updated!", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(30.dp))
         }
     }
 }

@@ -108,13 +108,14 @@ fun MainScreenWithNav(viewModel: MainViewModel) {
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "🎮", fontSize = 20.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "🎮", fontSize = 24.sp)
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "PUBG CONNECT",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = TextPrimary
+                            fontSize = 18.sp,
+                            color = TextPrimary,
+                            letterSpacing = 0.5.sp
                         )
                     }
                 },
