@@ -64,14 +64,12 @@ namespace PubgConnect.Server.Hubs
         {
             if (ConnectionToUserMap.TryRemove(Context.ConnectionId, out var userId))
             {
-                bool isLastConnection = false;
                 if (UserToConnectionsMap.TryGetValue(userId, out var userConns))
                 {
                     userConns.TryRemove(Context.ConnectionId, out _);
                     if (userConns.IsEmpty)
                     {
                         UserToConnectionsMap.TryRemove(userId, out _);
-                        isLastConnection = true;
                     }
                 }
 
@@ -81,11 +79,10 @@ namespace PubgConnect.Server.Hubs
                 }
                 catch { }
 
-                if (isLastConnection)
-                {
-                    _userService.UpdateUserStatus(userId, UserStatus.Offline, PlatformType.None);
-                    await NotifyFriendsStatusChanged(userId, UserStatus.Offline);
-                }
+                // Do not mark the user offline immediately. Mobile networks and Render's
+                // proxy can briefly drop a WebSocket while SignalR is reconnecting. The
+                // heartbeat monitor is the source of truth and will mark the user offline
+                // only after the grace period expires.
             }
 
             await base.OnDisconnectedAsync(exception);

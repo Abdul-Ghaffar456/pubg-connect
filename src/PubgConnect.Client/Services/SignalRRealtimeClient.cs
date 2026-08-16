@@ -39,6 +39,9 @@ namespace PubgConnect.Client.Services
         public async Task StartAsync(string userId, string serverUrl)
         {
             _userId = userId;
+            // A connected, signed-in desktop client is online even when PUBG is idle.
+            // The game detector will promote this to PlayingPubg when appropriate.
+            _currentStatus = UserStatus.Online;
             var hubUrl = $"{serverUrl.TrimEnd('/')}/hub/status";
 
             if (_hubConnection != null)
@@ -82,7 +85,7 @@ namespace PubgConnect.Client.Services
             {
                 ConnectionStateChanged?.Invoke(true);
                 // Re-register user connection ID upon reconnection
-                _ = _hubConnection.SendAsync("RegisterConnection", _userId);
+                _ = RegisterAndRestoreStatusAsync();
                 return Task.CompletedTask;
             };
 
@@ -95,7 +98,7 @@ namespace PubgConnect.Client.Services
             try
             {
                 await _hubConnection.StartAsync();
-                await _hubConnection.SendAsync("RegisterConnection", _userId);
+                await RegisterAndRestoreStatusAsync();
                 ConnectionStateChanged?.Invoke(true);
 
                 // Start heartbeat timer every 30 seconds
@@ -152,6 +155,19 @@ namespace PubgConnect.Client.Services
         private async Task OnHeartbeatTimerTick()
         {
             await SendHeartbeatAsync(_currentStatus);
+        }
+
+        private async Task RegisterAndRestoreStatusAsync()
+        {
+            if (_hubConnection == null || _hubConnection.State != HubConnectionState.Connected) return;
+
+            await _hubConnection.SendAsync("RegisterConnection", _userId);
+            // Restore the last known state immediately; waiting for the timer can leave
+            // friends seeing a stale/offline status after a reconnect.
+            if (_currentStatus != UserStatus.Offline)
+            {
+                await SendHeartbeatAsync(_currentStatus);
+            }
         }
 
         public async ValueTask DisposeAsync()

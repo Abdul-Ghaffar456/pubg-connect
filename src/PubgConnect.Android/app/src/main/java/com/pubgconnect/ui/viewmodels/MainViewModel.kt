@@ -13,10 +13,13 @@ import com.pubgconnect.notifications.PubgNotificationManager
 import com.pubgconnect.preferences.UserSessionManager
 import com.pubgconnect.realtime.SignalRClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -27,6 +30,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val sessionManager = UserSessionManager(application)
     private val signalRClient = SignalRClient()
+    private var friendSyncJob: Job? = null
 
     // UI States
     private val _isLoggedIn = MutableStateFlow(sessionManager.isLoggedIn)
@@ -68,16 +72,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         PubgNotificationManager.createNotificationChannel(application)
         ApiClient.updateBaseUrl(sessionManager.serverUrl)
 
+        setupSignalRHandlers()
+
         if (sessionManager.isLoggedIn) {
             startRealtimeAndSync()
         }
-
-        setupSignalRHandlers()
     }
 
     private fun setupSignalRHandlers() {
         signalRClient.onFriendStatusChanged = { updatedFriend ->
             handleFriendStatusChanged(updatedFriend)
+        }
+
+        signalRClient.onConnectionStateChanged = { connected ->
+            if (connected) {
+                loadFriends()
+                loadActivity()
+            }
         }
 
         signalRClient.onFriendRequestReceived = {
@@ -118,6 +129,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         knownFriendStates[updatedFriend.id] = updatedFriend
 
+        // Update the visible list immediately. Waiting for a REST round-trip can
+        // reintroduce stale data if it races with the real-time notification.
+        _friends.value = _friends.value.map { friend ->
+            if (friend.id == updatedFriend.id) updatedFriend else friend
+        }
+
         // Refresh friend list and activities
         viewModelScope.launch {
             loadFriends()
@@ -132,9 +149,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             loadFriends()
             loadActivity()
             loadPendingRequests()
+            startPeriodicFriendSync()
 
             // Start foreground detection service
             PubgDetectionService.start(getApplication())
+        }
+    }
+
+    private fun startPeriodicFriendSync() {
+        friendSyncJob?.cancel()
+        friendSyncJob = viewModelScope.launch {
+            while (isActive) {
+                delay(30_000)
+                loadFriends()
+            }
         }
     }
 
@@ -196,6 +224,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun logout() {
+        friendSyncJob?.cancel()
+        friendSyncJob = null
         PubgDetectionService.stop(getApplication())
         signalRClient.disconnect()
         sessionManager.logout()

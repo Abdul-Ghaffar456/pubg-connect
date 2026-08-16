@@ -30,6 +30,8 @@ class SignalRClient {
     private var currentUserId: String = ""
     private var currentServerUrl: String = ""
     private var currentStatus: UserStatus = UserStatus.OFFLINE
+    @Volatile private var reconnectEnabled = false
+    @Volatile private var connectionGeneration = 0L
 
     // Callbacks
     var onFriendStatusChanged: ((FriendDto) -> Unit)? = null
@@ -42,12 +44,15 @@ class SignalRClient {
         get() = hubConnection?.connectionState == HubConnectionState.CONNECTED
 
     fun connect(userId: String, serverUrl: String) {
+        stopConnection(allowReconnect = false)
         currentUserId = userId
         currentServerUrl = serverUrl
+        // A running signed-in client is online even when PUBG is not running.
+        if (currentStatus == UserStatus.OFFLINE) currentStatus = UserStatus.ONLINE
+        reconnectEnabled = true
+        val generation = ++connectionGeneration
         val hubUrl = "${serverUrl.trimEnd('/')}/hub/status"
         Log.d(TAG, "Connecting to SignalR hub at $hubUrl")
-
-        disconnect()
 
         try {
             val connection = HubConnectionBuilder.create(hubUrl).build()
@@ -78,7 +83,8 @@ class SignalRClient {
                 onConnectionStateChanged?.invoke(false)
                 scope.launch {
                     delay(5000)
-                    if (currentUserId.isNotBlank() && currentServerUrl.isNotBlank()) {
+                    if (reconnectEnabled && generation == connectionGeneration &&
+                        currentUserId.isNotBlank() && currentServerUrl.isNotBlank()) {
                         connect(currentUserId, currentServerUrl)
                     }
                 }
@@ -91,6 +97,7 @@ class SignalRClient {
                 try {
                     connection.start().blockingAwait()
                     connection.send("RegisterConnection", currentUserId)
+                    sendHeartbeat(currentStatus, PlatformType.ANDROID)
                     Log.d(TAG, "SignalR connection successfully established.")
                     onConnectionStateChanged?.invoke(true)
                     startHeartbeatLoop()
@@ -133,6 +140,17 @@ class SignalRClient {
     }
 
     fun disconnect() {
+        reconnectEnabled = false
+        connectionGeneration++
+        currentStatus = UserStatus.OFFLINE
+        currentUserId = ""
+        currentServerUrl = ""
+        stopConnection(allowReconnect = false)
+        onConnectionStateChanged?.invoke(false)
+    }
+
+    private fun stopConnection(allowReconnect: Boolean) {
+        reconnectEnabled = allowReconnect
         heartbeatJob?.cancel()
         heartbeatJob = null
         try {
@@ -141,6 +159,5 @@ class SignalRClient {
         } catch (e: Exception) {
             Log.w(TAG, "Error disconnecting SignalR: ${e.message}")
         }
-        onConnectionStateChanged?.invoke(false)
     }
 }
