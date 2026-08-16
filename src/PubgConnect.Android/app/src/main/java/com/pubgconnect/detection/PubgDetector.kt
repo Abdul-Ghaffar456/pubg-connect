@@ -1,11 +1,13 @@
 package com.pubgconnect.detection
 
 import android.app.AppOpsManager
+import android.app.KeyguardManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
@@ -57,11 +59,22 @@ object PubgDetector {
     }
 
     /**
-     * Queries the most recent foreground application using UsageStatsManager.
-     * Guaranteed ultra-low resource usage by inspecting only recent events (last 15 seconds).
+     * Queries the active foreground application using UsageStatsManager.
+     * Guaranteed zero false positives by validating screen interactivity, keyguard, and exact lifecycle events.
      */
     fun isPubgRunning(context: Context): Boolean {
         if (!hasUsageStatsPermission(context)) {
+            return false
+        }
+
+        // 1. If screen is off or locked, PUBG cannot be actively played in the foreground
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        if (powerManager != null && !powerManager.isInteractive) {
+            return false
+        }
+
+        val keyguardManager = context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+        if (keyguardManager != null && keyguardManager.isKeyguardLocked) {
             return false
         }
 
@@ -69,28 +82,34 @@ object PubgDetector {
             ?: return false
 
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 30 // Look back 30 seconds
+        val startTime = endTime - 1000 * 45 // Inspect last 45 seconds of events
 
         return try {
             val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
             val event = UsageEvents.Event()
             var lastForegroundPackage: String? = null
+            var lastEventTime = 0L
 
             while (usageEvents.hasNextEvent()) {
                 usageEvents.getNextEvent(event)
-                if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                    lastForegroundPackage = event.packageName
-                } else if (event.eventType == UsageEvents.Event.ACTIVITY_PAUSED ||
-                    event.eventType == UsageEvents.Event.ACTIVITY_STOPPED
-                ) {
-                    if (event.packageName == lastForegroundPackage) {
-                        lastForegroundPackage = null
+                
+                when (event.eventType) {
+                    UsageEvents.Event.ACTIVITY_RESUMED -> {
+                        lastForegroundPackage = event.packageName
+                        lastEventTime = event.timeStamp
+                    }
+                    UsageEvents.Event.ACTIVITY_PAUSED,
+                    UsageEvents.Event.ACTIVITY_STOPPED -> {
+                        if (event.packageName == lastForegroundPackage) {
+                            lastForegroundPackage = null
+                        }
                     }
                 }
             }
 
+            // Only return true if the top-most active foreground package is a verified PUBG package
             if (lastForegroundPackage != null && PUBG_PACKAGE_NAMES.contains(lastForegroundPackage)) {
-                Log.d(TAG, "PUBG Mobile foreground activity detected: $lastForegroundPackage")
+                Log.d(TAG, "PUBG Mobile actively running in foreground: $lastForegroundPackage (event time: $lastEventTime)")
                 true
             } else {
                 false

@@ -83,10 +83,20 @@ class PubgDetectionService : Service() {
             while (isActive) {
                 try {
                     val isSimulated = sessionManager.isSimulationMode
-                    val isCurrentlyPlaying = if (isSimulated) {
+                    var isCurrentlyPlaying = if (isSimulated) {
                         SimulationController.isSimulatedPubgActive.value
                     } else {
                         PubgDetector.isPubgRunning(applicationContext)
+                    }
+
+                    // Double-confirmation verification to prevent false positive notifications
+                    if (isCurrentlyPlaying && !isPlayingPubgState) {
+                        delay(2500)
+                        isCurrentlyPlaying = if (isSimulated) {
+                            SimulationController.isSimulatedPubgActive.value
+                        } else {
+                            PubgDetector.isPubgRunning(applicationContext)
+                        }
                     }
 
                     if (isCurrentlyPlaying != isPlayingPubgState) {
@@ -107,8 +117,8 @@ class PubgDetectionService : Service() {
                     Log.e(TAG, "Error in detection loop: ${e.message}")
                 }
 
-                // Adaptive sleep: 10s if playing, 20s if idle (negligible battery impact)
-                val checkInterval = if (isPlayingPubgState) 10_000L else 20_000L
+                // Adaptive sleep: 8s if playing, 15s if idle
+                val checkInterval = if (isPlayingPubgState) 8_000L else 15_000L
                 delay(checkInterval)
             }
         }
