@@ -82,7 +82,12 @@ app.MapGet("/api/friends/search", (string friendId, IUserService userService) =>
 app.MapPost("/api/friends/request", async (SendFriendRequestDto req, HttpContext ctx, IUserService userService, IHubContext<StatusHub> hubContext) =>
 {
     var senderId = ctx.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-    if (string.IsNullOrEmpty(senderId)) return Results.Unauthorized();
+    if (string.IsNullOrEmpty(senderId) || userService.GetUserById(senderId) == null)
+    {
+        return Results.Json(
+            new { Message = "Session expired. Please sign in again." },
+            statusCode: StatusCodes.Status401Unauthorized);
+    }
 
     var result = userService.SendFriendRequest(senderId, req.TargetFriendId);
     if (!result.Success) return Results.BadRequest(new { Message = result.Message });

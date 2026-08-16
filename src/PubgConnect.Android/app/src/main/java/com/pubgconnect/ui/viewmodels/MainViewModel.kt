@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.pubgconnect.api.ApiClient
 import com.pubgconnect.detection.PubgDetectionService
 import com.pubgconnect.detection.PubgDetector
@@ -75,7 +76,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         setupSignalRHandlers()
 
         if (sessionManager.isLoggedIn) {
-            startRealtimeAndSync()
+            validateSavedSession()
+        }
+    }
+
+    private fun validateSavedSession() {
+        val token = sessionManager.token ?: return
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.getService().getMe("Bearer $token")
+                if (response.isSuccessful && response.body() != null) {
+                    val user = response.body()!!
+                    sessionManager.currentUser = user
+                    _currentUser.value = user
+                    startRealtimeAndSync()
+                } else if (response.code() == 401) {
+                    logout()
+                    _statusMessage.value = "Your session expired after the server update. Please sign in again."
+                } else {
+                    startRealtimeAndSync()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not validate saved session: ${e.message}")
+                startRealtimeAndSync()
+            }
         }
     }
 
@@ -316,7 +340,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _searchResultUser.value = null
                     onComplete(true, res.body()?.message ?: "Friend request sent!")
                 } else {
-                    onComplete(false, res.body()?.message ?: "Failed to send friend request.")
+                    val errorMessage = try {
+                        res.errorBody()?.charStream()?.use {
+                            Gson().fromJson(it, SimpleResponse::class.java)?.message
+                        }
+                    } catch (_: Exception) {
+                        null
+                    }
+
+                    if (res.code() == 401) {
+                        logout()
+                    }
+                    onComplete(
+                        false,
+                        errorMessage ?: if (res.code() == 401) {
+                            "Session expired. Please sign in again."
+                        } else {
+                            "Failed to send friend request (error ${res.code()})."
+                        }
+                    )
                 }
             } catch (e: Exception) {
                 onComplete(false, "Request error: ${e.message}")

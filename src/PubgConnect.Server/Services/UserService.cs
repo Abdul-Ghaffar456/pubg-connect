@@ -193,6 +193,11 @@ namespace PubgConnect.Server.Services
 
         public (bool Success, string Message) SendFriendRequest(string senderId, string targetFriendId)
         {
+            if (!_usersById.TryGetValue(senderId, out var sender))
+            {
+                return (false, "Session expired. Please sign in again.");
+            }
+
             var cleanFriendId = targetFriendId.Trim().ToUpperInvariant();
             if (!_usersByFriendId.TryGetValue(cleanFriendId, out var targetUser))
             {
@@ -209,7 +214,6 @@ namespace PubgConnect.Server.Services
                 return (false, "This user is currently not accepting friend requests.");
             }
 
-            var sender = _usersById[senderId];
             if (sender.Friends.Contains(targetUser.Id))
             {
                 return (false, "You are already friends with this user.");
