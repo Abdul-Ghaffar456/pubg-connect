@@ -184,6 +184,8 @@ fun ModernTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     singleLine: Boolean = true,
+    isError: Boolean = false,
+    errorMessage: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
@@ -193,10 +195,14 @@ fun ModernTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, color = TextSecondary, fontSize = 13.sp) },
+        label = { Text(label, color = if (isError) AccentRed else TextSecondary, fontSize = 13.sp) },
         placeholder = { Text(placeholder, color = TextMuted, fontSize = 13.sp) },
         modifier = modifier.fillMaxWidth(),
         singleLine = singleLine,
+        isError = isError,
+        supportingText = if (isError && !errorMessage.isNullOrBlank()) {
+            { Text(text = errorMessage, color = AccentRed, fontSize = 11.sp, fontWeight = FontWeight.Medium) }
+        } else null,
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
@@ -206,10 +212,13 @@ fun ModernTextField(
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = AccentGreen,
             unfocusedBorderColor = BorderDark,
+            errorBorderColor = AccentRed,
+            errorLabelColor = AccentRed,
             focusedTextColor = TextPrimary,
             unfocusedTextColor = TextPrimary,
             focusedContainerColor = Color(0xFF0F172A),
             unfocusedContainerColor = Color(0xFF0F172A),
+            errorContainerColor = Color(0xFF1C1318),
             cursorColor = AccentGreen
         )
     )

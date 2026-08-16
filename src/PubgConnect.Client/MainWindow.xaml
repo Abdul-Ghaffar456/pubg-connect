@@ -7,6 +7,7 @@
         xmlns:views="clr-namespace:PubgConnect.Client.Views"
         mc:Ignorable="d"
         Title="PUBG Connect - GameLoop Friend Notifier" 
+        Icon="app_icon.ico"
         Height="680" Width="960" MinHeight="550" MinWidth="800"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BgDarkBrush}"

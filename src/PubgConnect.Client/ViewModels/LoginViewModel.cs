@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -52,9 +53,28 @@ namespace PubgConnect.Client.ViewModels
         [RelayCommand]
         private async Task LoginAsync()
         {
-            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            var trimmedEmail = Email?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(trimmedEmail))
             {
-                ErrorMessage = "Please enter your email and password.";
+                ErrorMessage = "Please enter your email address.";
+                return;
+            }
+
+            if (!Regex.IsMatch(trimmedEmail, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                ErrorMessage = "Please enter a valid email address (e.g. name@example.com).";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Password))
+            {
+                ErrorMessage = "Please enter your password.";
+                return;
+            }
+
+            if (Password.Length < 6)
+            {
+                ErrorMessage = "Password must be at least 6 characters long.";
                 return;
             }
 
@@ -63,7 +83,7 @@ namespace PubgConnect.Client.ViewModels
             IsBusy = true;
             ErrorMessage = string.Empty;
 
-            var res = await _apiClient.LoginAsync(Email, Password);
+            var res = await _apiClient.LoginAsync(trimmedEmail, Password);
             IsBusy = false;
 
             if (res.Success && res.User != null)

@@ -32,10 +32,30 @@ namespace PubgConnect.Client.Services
             _onSettings = onSettingsRequested;
             _onExit = onExitRequested;
 
+            Icon trayIcon = SystemIcons.Application;
+            try
+            {
+                var iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app_icon.ico");
+                if (System.IO.File.Exists(iconPath))
+                {
+                    trayIcon = new Icon(iconPath);
+                }
+                else
+                {
+                    var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                    if (!string.IsNullOrEmpty(exePath))
+                    {
+                        var extracted = Icon.ExtractAssociatedIcon(exePath);
+                        if (extracted != null) trayIcon = extracted;
+                    }
+                }
+            }
+            catch { }
+
             _notifyIcon = new NotifyIcon
             {
                 Text = "PUBG Connect",
-                Icon = SystemIcons.Application,
+                Icon = trayIcon,
                 Visible = true
             };
 

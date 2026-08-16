@@ -37,16 +37,49 @@ namespace PubgConnect.Client.ViewModels
         [RelayCommand]
         private async Task RegisterAsync()
         {
-            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            var trimmedUsername = Username?.Trim() ?? string.Empty;
+            var trimmedEmail = Email?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(trimmedUsername))
             {
-                ErrorMessage = "All fields are required.";
+                ErrorMessage = "Display name is required.";
+                return;
+            }
+
+            if (trimmedUsername.Length < 3 || trimmedUsername.Length > 20)
+            {
+                ErrorMessage = "Display name must be between 3 and 20 characters.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(trimmedEmail))
+            {
+                ErrorMessage = "Email address is required.";
+                return;
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(trimmedEmail, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                ErrorMessage = "Please enter a valid email address (e.g. name@example.com).";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Password))
+            {
+                ErrorMessage = "Password is required.";
+                return;
+            }
+
+            if (Password.Length < 6)
+            {
+                ErrorMessage = "Password must be at least 6 characters long.";
                 return;
             }
 
             IsBusy = true;
             ErrorMessage = string.Empty;
 
-            var res = await _apiClient.RegisterAsync(Username, Email, Password);
+            var res = await _apiClient.RegisterAsync(trimmedUsername, trimmedEmail, Password);
             IsBusy = false;
 
             if (res.Success && res.User != null)

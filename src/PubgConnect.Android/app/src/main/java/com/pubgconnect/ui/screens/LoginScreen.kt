@@ -1,5 +1,6 @@
 package com.pubgconnect.ui.screens
 
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,7 +42,74 @@ fun LoginScreen(viewModel: MainViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    var usernameError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+
     val isLoading by viewModel.isLoading.collectAsState()
+
+    fun validateForm(): Boolean {
+        var isValid = true
+
+        // Validate Email
+        val trimmedEmail = email.trim()
+        if (trimmedEmail.isEmpty()) {
+            emailError = "Email address is required."
+            isValid = false
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
+            emailError = "Enter a valid email address (e.g. name@example.com)."
+            isValid = false
+        } else {
+            emailError = null
+        }
+
+        // Validate Password
+        if (password.isEmpty()) {
+            passwordError = "Password is required."
+            isValid = false
+        } else if (password.length < 6) {
+            passwordError = "Password must be at least 6 characters."
+            isValid = false
+        } else {
+            passwordError = null
+        }
+
+        // Validate Username (for Registration)
+        if (!isLoginTab) {
+            val trimmedUsername = username.trim()
+            if (trimmedUsername.isEmpty()) {
+                usernameError = "Display name is required."
+                isValid = false
+            } else if (trimmedUsername.length < 3) {
+                usernameError = "Display name must be at least 3 characters."
+                isValid = false
+            } else if (trimmedUsername.length > 20) {
+                usernameError = "Display name cannot exceed 20 characters."
+                isValid = false
+            } else {
+                usernameError = null
+            }
+        } else {
+            usernameError = null
+        }
+
+        return isValid
+    }
+
+    fun submit() {
+        focusManager.clearFocus()
+        if (!validateForm()) return
+
+        if (isLoginTab) {
+            viewModel.login(email.trim(), password) { success, msg ->
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            viewModel.register(username.trim(), email.trim(), password) { success, msg ->
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -57,7 +125,7 @@ fun LoginScreen(viewModel: MainViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Big App Brand Hero Icon
             Box(
@@ -100,7 +168,12 @@ fun LoginScreen(viewModel: MainViewModel) {
                             if (isLoginTab) AccentGreen else Color.Transparent,
                             RoundedCornerShape(10.dp)
                         )
-                        .clickable { isLoginTab = true }
+                        .clickable {
+                            isLoginTab = true
+                            usernameError = null
+                            emailError = null
+                            passwordError = null
+                        }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -119,7 +192,12 @@ fun LoginScreen(viewModel: MainViewModel) {
                             if (!isLoginTab) AccentGreen else Color.Transparent,
                             RoundedCornerShape(10.dp)
                         )
-                        .clickable { isLoginTab = false }
+                        .clickable {
+                            isLoginTab = false
+                            usernameError = null
+                            emailError = null
+                            passwordError = null
+                        }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -139,9 +217,14 @@ fun LoginScreen(viewModel: MainViewModel) {
                 if (!isLoginTab) {
                     ModernTextField(
                         value = username,
-                        onValueChange = { username = it },
+                        onValueChange = {
+                            username = it
+                            if (usernameError != null) usernameError = null
+                        },
                         label = "Display Name",
                         placeholder = "e.g. ShadowHunter",
+                        isError = usernameError != null,
+                        errorMessage = usernameError,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                     )
                     Spacer(modifier = Modifier.height(14.dp))
@@ -149,9 +232,14 @@ fun LoginScreen(viewModel: MainViewModel) {
 
                 ModernTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = {
+                        email = it
+                        if (emailError != null) emailError = null
+                    },
                     label = "Email Address",
                     placeholder = "name@example.com",
+                    isError = emailError != null,
+                    errorMessage = emailError,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
@@ -162,60 +250,27 @@ fun LoginScreen(viewModel: MainViewModel) {
 
                 ModernTextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = {
+                        password = it
+                        if (passwordError != null) passwordError = null
+                    },
                     label = "Password",
-                    placeholder = "Enter your password",
+                    placeholder = "At least 6 characters",
+                    isError = passwordError != null,
+                    errorMessage = passwordError,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
-                    keyboardActions = KeyboardActions(onDone = {
-                        focusManager.clearFocus()
-                        if (isLoginTab) {
-                            if (email.isBlank() || password.isBlank()) {
-                                Toast.makeText(context, "Please enter your email and password", Toast.LENGTH_SHORT).show()
-                                return@KeyboardActions
-                            }
-                            viewModel.login(email, password) { success, msg ->
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            if (username.isBlank() || email.isBlank() || password.isBlank()) {
-                                Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
-                                return@KeyboardActions
-                            }
-                            viewModel.register(username, email, password) { success, msg ->
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    })
+                    keyboardActions = KeyboardActions(onDone = { submit() })
                 )
 
                 Spacer(modifier = Modifier.height(22.dp))
 
                 PrimaryButton(
                     text = if (isLoginTab) "Sign In" else "Create Account",
-                    onClick = {
-                        focusManager.clearFocus()
-                        if (isLoginTab) {
-                            if (email.isBlank() || password.isBlank()) {
-                                Toast.makeText(context, "Please enter your email and password", Toast.LENGTH_SHORT).show()
-                                return@PrimaryButton
-                            }
-                            viewModel.login(email, password) { success, msg ->
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            if (username.isBlank() || email.isBlank() || password.isBlank()) {
-                                Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
-                                return@PrimaryButton
-                            }
-                            viewModel.register(username, email, password) { success, msg ->
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    },
+                    onClick = { submit() },
                     isLoading = isLoading
                 )
             }
