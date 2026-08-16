@@ -24,9 +24,14 @@
                 <TextBlock Text="Password" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="Medium" Margin="0,0,0,6"/>
                 <PasswordBox x:Name="PasswordBox" Style="{StaticResource ModernPasswordBoxStyle}" Margin="0,0,0,16" PasswordChanged="PasswordBox_PasswordChanged"/>
 
-                <!-- Error Message -->
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource AccentRedBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"
-                           Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisConverter}}"/>
+                <!-- Error Message Banner -->
+                <Border Background="#2D1515" BorderBrush="{StaticResource AccentRedBrush}" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisConverter}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚠️" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource AccentRedBrush}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="300"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- Login Button -->
                 <Button Content="Log In" Command="{Binding LoginCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="46" Margin="0,0,0,16"/>

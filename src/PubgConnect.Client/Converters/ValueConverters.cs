@@ -59,7 +59,24 @@ namespace PubgConnect.Client.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            bool boolVal = value is bool b && b;
+            bool boolVal;
+            if (value is bool b)
+            {
+                boolVal = b;
+            }
+            else if (value is string str)
+            {
+                boolVal = !string.IsNullOrWhiteSpace(str);
+            }
+            else if (value is int i)
+            {
+                boolVal = i > 0;
+            }
+            else
+            {
+                boolVal = value != null;
+            }
+
             if (parameter?.ToString() == "Invert") boolVal = !boolVal;
             return boolVal ? Visibility.Visible : Visibility.Collapsed;
         }

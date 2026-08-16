@@ -39,6 +39,16 @@ namespace PubgConnect.Client.ViewModels
             ServerUrl = _apiClient.BaseUrl;
         }
 
+        partial void OnEmailChanged(string value)
+        {
+            ErrorMessage = string.Empty;
+        }
+
+        partial void OnPasswordChanged(string value)
+        {
+            ErrorMessage = string.Empty;
+        }
+
         partial void OnServerUrlChanged(string value)
         {
             _apiClient.BaseUrl = value;

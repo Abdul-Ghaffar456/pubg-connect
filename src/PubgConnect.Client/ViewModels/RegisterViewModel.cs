@@ -34,6 +34,10 @@ namespace PubgConnect.Client.ViewModels
             _onRegisterSuccess = onRegisterSuccess;
         }
 
+        partial void OnUsernameChanged(string value) => ErrorMessage = string.Empty;
+        partial void OnEmailChanged(string value) => ErrorMessage = string.Empty;
+        partial void OnPasswordChanged(string value) => ErrorMessage = string.Empty;
+
         [RelayCommand]
         private async Task RegisterAsync()
         {
