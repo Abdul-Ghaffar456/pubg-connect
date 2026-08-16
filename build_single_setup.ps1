@@ -32,11 +32,11 @@ dotnet publish src/PubgConnect.Installer/PubgConnect.Installer.csproj -c Release
 
 # 4. Copy to dist
 Write-Host "[4/4] Outputting final setup file..." -ForegroundColor Yellow
-Copy-Item "publish/setup/PubgConnect.Installer.exe" -Destination "dist/PUBGConnect_Setup_v1.0.exe" -Force
+Copy-Item "publish/setup/PubgConnect.Installer.exe" -Destination "dist/PUBGConnect_Setup_v1.0.1.exe" -Force
 
-$setupFile = Get-Item "dist/PUBGConnect_Setup_v1.0.exe"
+$setupFile = Get-Item "dist/PUBGConnect_Setup_v1.0.1.exe"
 $sizeMb = [math]::Round($setupFile.Length / 1MB, 2)
 Write-Host "=========================================" -ForegroundColor Green
 Write-Host " Single Setup File Created Successfully!" -ForegroundColor Green
-Write-Host " Location: dist\PUBGConnect_Setup_v1.0.exe ($sizeMb MB)" -ForegroundColor Green
+Write-Host " Location: dist\PUBGConnect_Setup_v1.0.1.exe ($sizeMb MB)" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Green

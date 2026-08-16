@@ -196,7 +196,7 @@ namespace PubgConnect.Installer
                 if (key != null)
                 {
                     key.SetValue("DisplayName", "PUBG Connect");
-                    key.SetValue("DisplayVersion", "1.0.0");
+                    key.SetValue("DisplayVersion", "1.0.1");
                     key.SetValue("Publisher", "PUBG Connect");
                     key.SetValue("DisplayIcon", File.Exists(iconPath) ? iconPath : exePath);
                     key.SetValue("InstallLocation", _installDir);
