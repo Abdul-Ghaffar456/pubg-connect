@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
@@ -15,7 +16,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddHostedService<HeartbeatMonitorService>();
 builder.Services.AddHostedService<LanDiscoveryServer>();
-builder.Services.AddSignalR();
+
+// Configure SignalR for Cloud Concurrency and Keep-Alive
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+    options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+    options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+    options.MaximumParallelInvocationsPerClient = 5;
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -76,15 +87,15 @@ app.MapPost("/api/friends/request", async (SendFriendRequestDto req, HttpContext
     var result = userService.SendFriendRequest(senderId, req.TargetFriendId);
     if (!result.Success) return Results.BadRequest(new { Message = result.Message });
 
-    // Notify receiver live if connected
+    // Notify receiver live via SignalR group
     var targetUser = userService.SearchUserByFriendId(req.TargetFriendId);
     if (targetUser != null)
     {
-        var connections = StatusHub.GetUserConnections(targetUser.Id);
-        foreach (var connId in connections)
+        try
         {
-            await hubContext.Clients.Client(connId).SendAsync(SignalREvents.FriendRequestReceived);
+            await hubContext.Clients.Group($"user_{targetUser.Id}").SendAsync(SignalREvents.FriendRequestReceived);
         }
+        catch { }
     }
 
     return Results.Ok(new { Message = result.Message });
@@ -98,16 +109,12 @@ app.MapPost("/api/friends/request/respond", async (RespondFriendRequestDto req, 
     var result = userService.RespondFriendRequest(userId, req.RequestId, req.Accept);
     if (!result.Success) return Results.BadRequest(new { Message = result.Message });
 
-    // Notify both users' friends list to update
-    var currentUser = userService.GetUserById(userId);
-    if (currentUser != null)
+    // Notify both users via SignalR group
+    try
     {
-        var connections = StatusHub.GetUserConnections(userId);
-        foreach (var connId in connections)
-        {
-            await hubContext.Clients.Client(connId).SendAsync(SignalREvents.FriendRequestAccepted);
-        }
+        await hubContext.Clients.Group($"user_{userId}").SendAsync(SignalREvents.FriendRequestAccepted);
     }
+    catch { }
 
     return Results.Ok(new { Message = result.Message });
 });
@@ -127,12 +134,13 @@ app.MapDelete("/api/friends/remove/{friendUserId}", async (string friendUserId, 
 
     var result = userService.RemoveFriend(userId, friendUserId);
 
-    // Broadcast removal event to both users
-    var userConns = StatusHub.GetUserConnections(userId);
-    foreach (var c in userConns) await hubContext.Clients.Client(c).SendAsync(SignalREvents.FriendRemoved, friendUserId);
-
-    var friendConns = StatusHub.GetUserConnections(friendUserId);
-    foreach (var c in friendConns) await hubContext.Clients.Client(c).SendAsync(SignalREvents.FriendRemoved, userId);
+    // Broadcast removal event to both users' SignalR groups
+    try
+    {
+        await hubContext.Clients.Group($"user_{userId}").SendAsync(SignalREvents.FriendRemoved, friendUserId);
+        await hubContext.Clients.Group($"user_{friendUserId}").SendAsync(SignalREvents.FriendRemoved, userId);
+    }
+    catch { }
 
     return Results.Ok(new { Message = result.Message });
 });

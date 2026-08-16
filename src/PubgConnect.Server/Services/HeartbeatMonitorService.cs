@@ -50,11 +50,11 @@ namespace PubgConnect.Server.Services
 
                             foreach (var friendUserId in friendUserIds)
                             {
-                                var connections = StatusHub.GetUserConnections(friendUserId);
-                                foreach (var connId in connections)
+                                try
                                 {
-                                    await _hubContext.Clients.Client(connId).SendAsync(Shared.SignalREvents.FriendStatusChanged, dto, stoppingToken);
+                                    await _hubContext.Clients.Group($"user_{friendUserId}").SendAsync(Shared.SignalREvents.FriendStatusChanged, dto, stoppingToken);
                                 }
+                                catch { }
                             }
                         }
                     }

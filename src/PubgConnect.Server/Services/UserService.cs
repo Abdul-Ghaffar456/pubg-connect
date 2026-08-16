@@ -274,12 +274,22 @@ namespace PubgConnect.Server.Services
         {
             if (!_usersById.TryGetValue(userId, out var user)) return new List<FriendDto>();
 
+            List<string> friendIds;
+            lock (user.Friends)
+            {
+                friendIds = user.Friends.ToList();
+            }
+
             var friends = new List<FriendDto>();
-            foreach (var friendId in user.Friends)
+            foreach (var friendId in friendIds)
             {
                 if (_usersById.TryGetValue(friendId, out var f))
                 {
-                    var isMuted = user.MutedFriends.Contains(f.Id);
+                    bool isMuted;
+                    lock (user.MutedFriends)
+                    {
+                        isMuted = user.MutedFriends.Contains(f.Id);
+                    }
                     
                     // Respect privacy settings: If friend disables ShareStatus, show Offline
                     var effectiveStatus = f.ShareStatus ? f.Status : UserStatus.Offline;
@@ -389,10 +399,14 @@ namespace PubgConnect.Server.Services
         {
             if (!_usersById.TryGetValue(userId, out var user)) return new List<ActivityItemDto>();
 
+            HashSet<string> allowedUserIds;
+            lock (user.Friends)
+            {
+                allowedUserIds = new HashSet<string>(user.Friends) { user.Id };
+            }
+
             lock (_recentActivities)
             {
-                // Return activities of the user + their friends
-                var allowedUserIds = new HashSet<string>(user.Friends) { user.Id };
                 return _recentActivities
                     .Where(a => allowedUserIds.Contains(a.UserId))
                     .Take(limit)
@@ -437,7 +451,10 @@ namespace PubgConnect.Server.Services
         {
             if (_usersById.TryGetValue(userId, out var user))
             {
-                return new HashSet<string>(user.Friends);
+                lock (user.Friends)
+                {
+                    return new HashSet<string>(user.Friends);
+                }
             }
             return new HashSet<string>();
         }

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using PubgConnect.Server.Services;
@@ -11,7 +13,7 @@ namespace PubgConnect.Server.Hubs
     {
         private readonly IUserService _userService;
         private static readonly ConcurrentDictionary<string, string> ConnectionToUserMap = new();
-        private static readonly ConcurrentDictionary<string, HashSet<string>> UserToConnectionsMap = new();
+        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> UserToConnectionsMap = new();
 
         public StatusHub(IUserService userService)
         {
@@ -24,15 +26,11 @@ namespace PubgConnect.Server.Hubs
 
             ConnectionToUserMap[Context.ConnectionId] = userId;
 
-            lock (UserToConnectionsMap)
-            {
-                if (!UserToConnectionsMap.TryGetValue(userId, out var connections))
-                {
-                    connections = new HashSet<string>();
-                    UserToConnectionsMap[userId] = connections;
-                }
-                connections.Add(Context.ConnectionId);
-            }
+            var userConns = UserToConnectionsMap.GetOrAdd(userId, _ => new ConcurrentDictionary<string, byte>());
+            userConns[Context.ConnectionId] = 0;
+
+            // Add this connection to the user's SignalR group for safe broadcast
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
 
             var user = _userService.GetUserById(userId);
             if (user != null)
@@ -67,18 +65,21 @@ namespace PubgConnect.Server.Hubs
             if (ConnectionToUserMap.TryRemove(Context.ConnectionId, out var userId))
             {
                 bool isLastConnection = false;
-                lock (UserToConnectionsMap)
+                if (UserToConnectionsMap.TryGetValue(userId, out var userConns))
                 {
-                    if (UserToConnectionsMap.TryGetValue(userId, out var connections))
+                    userConns.TryRemove(Context.ConnectionId, out _);
+                    if (userConns.IsEmpty)
                     {
-                        connections.Remove(Context.ConnectionId);
-                        if (connections.Count == 0)
-                        {
-                            UserToConnectionsMap.TryRemove(userId, out _);
-                            isLastConnection = true;
-                        }
+                        UserToConnectionsMap.TryRemove(userId, out _);
+                        isLastConnection = true;
                     }
                 }
+
+                try
+                {
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user_{userId}");
+                }
+                catch { }
 
                 if (isLastConnection)
                 {
@@ -92,11 +93,10 @@ namespace PubgConnect.Server.Hubs
 
         public async Task NotifyFriendsStatusChanged(string userId, UserStatus newStatus)
         {
-            var friends = _userService.GetFriends(userId);
-            var friendUserIds = _userService.GetFriendUserIds(userId);
             var user = _userService.GetUserById(userId);
-
             if (user == null) return;
+
+            var friendUserIds = _userService.GetFriendUserIds(userId);
 
             var dto = new FriendDto
             {
@@ -109,26 +109,22 @@ namespace PubgConnect.Server.Hubs
                 ShowPlayingDuration = user.ShowPlayingDuration
             };
 
+            // Safely notify each friend using SignalR groups (100% thread-safe)
             foreach (var friendUserId in friendUserIds)
             {
-                if (UserToConnectionsMap.TryGetValue(friendUserId, out var connections))
+                try
                 {
-                    foreach (var connId in connections)
-                    {
-                        await Clients.Client(connId).SendAsync(SignalREvents.FriendStatusChanged, dto);
-                    }
+                    await Clients.Group($"user_{friendUserId}").SendAsync(SignalREvents.FriendStatusChanged, dto);
                 }
+                catch { }
             }
         }
 
         public static List<string> GetUserConnections(string userId)
         {
-            if (UserToConnectionsMap.TryGetValue(userId, out var connections))
+            if (UserToConnectionsMap.TryGetValue(userId, out var userConns))
             {
-                lock (connections)
-                {
-                    return new List<string>(connections);
-                }
+                return userConns.Keys.ToList();
             }
             return new List<string>();
         }
