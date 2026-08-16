@@ -8,6 +8,8 @@ dist/
 *.userosscache
 *.sln.docstates
 *.log
+*.zip
+**/payload.zip
 
 # Android Build artifacts
 .gradle/
